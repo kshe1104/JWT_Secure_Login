@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.project.securelogin.dto.UserRequestDTO;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
@@ -41,4 +43,14 @@ public class User {
     private boolean accountNonLocked; // 계정 잠김 여부
     private boolean credentialsNonExpired; // 자격 증명 만료 여부
     private boolean enabled; // 계정 활성화 여부
+
+    public void updateUser(UserRequestDTO requestDTO, PasswordEncoder passwordEncoder) {
+        this.username = requestDTO.getUsername();
+        this.email = requestDTO.getEmail();
+
+        // 새 비밀번호가 null이 아니고, 기존 비밀번호와 다를 때만 인코딩하여 업데이트
+        if (requestDTO.getPassword() != null && !requestDTO.getPassword().equals(this.password)) {
+            this.password = passwordEncoder.encode(requestDTO.getPassword());
+        }
+    }
 }
