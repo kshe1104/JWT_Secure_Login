@@ -37,4 +37,10 @@ public class AuthService {
 
         }
     }
+
+    // Refresh 토큰을 블랙리스트에 추가하고, 성공적으로 추가되면 true 반환
+    // 로그아웃
+    public boolean logout(String token) {
+        return jwtTokenProvider.blacklistRefreshToken(token);
+    }
 }
