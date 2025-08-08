@@ -1,4 +1,4 @@
-package org.project.jwt;
+package org.project.securelogin.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 
 @Getter
 @RequiredArgsConstructor
@@ -19,9 +20,11 @@ public class CustomUserDetails implements UserDetails {
     private final boolean enabled; // 계정 활성화 여부
     private final Collection<? extends GrantedAuthority> authorities; // 사용자 권한 목록
 
+    private final User user;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+        return Collections.emptyList();
     }
 
     @Override
@@ -43,4 +46,13 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return enabled;
     }
+
+    public CustomUserDetails(User user) {
+        this.user = user;
+    }
+    @Override
+    public String getPassword(){
+        return user.getPassword();
+    }
+
 }

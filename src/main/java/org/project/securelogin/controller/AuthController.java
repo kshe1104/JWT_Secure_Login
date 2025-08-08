@@ -3,11 +3,14 @@ package org.project.securelogin.controller;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.project.securelogin.dto.JsonResponse;
+import org.project.securelogin.exception.UserAccountLockedException;
+import org.project.securelogin.exception.UserNotEnabledException;
 import org.project.securelogin.service.AuthService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,15 +24,26 @@ public class AuthController {
     public ResponseEntity<JsonResponse> login(@RequestBody AuthRequest authRequest) {
         try {
             HttpHeaders headers = authService.login(authRequest.getEmail(), authRequest.getPassword());
-
             JsonResponse response = new JsonResponse(HttpStatus.OK.value(), "로그인에 성공했습니다.", null);
+            return ResponseEntity.ok().headers(headers).body(response);
 
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(response);
-        } catch (AuthenticationException e) {
-            JsonResponse errorResponse = new JsonResponse(HttpStatus.UNAUTHORIZED.value(), "이메일 주소나 비밀번호가 올바르지 않습니다.",null);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new JsonResponse(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
+        }catch (UserNotEnabledException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new JsonResponse(HttpStatus.UNAUTHORIZED.value(), e.getMessage(), null));
+        }catch (UserAccountLockedException e){
+            return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(new JsonResponse(HttpStatus.LOCKED.value(), e.getMessage(), null));
+        }
+        catch (AuthenticationException e) {
+            int remainingAttempts = authService.getRemainingLoginAttempts(authRequest.getEmail());
+
+            String message = "이메일 주소나 비밀번호가 올바르지 않습니다." + remainingAttempts + "번 더 로그인에 실패하면 계정이 잠길 수 있습니다.";
+            JsonResponse errorResponse = new JsonResponse(HttpStatus.UNAUTHORIZED.value(), "이메일 주소나 비밀번호가 올바르지 않습니다.", null);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new JsonResponse(HttpStatus.UNAUTHORIZED.value(), message, null));
         }
     }
 

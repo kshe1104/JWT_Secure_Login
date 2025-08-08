@@ -1,7 +1,7 @@
 package org.project.securelogin.service;
 
 import lombok.RequiredArgsConstructor;
-import org.project.jwt.JwtTokenProvider;
+import org.project.securelogin.jwt.JwtTokenProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailsService userDetailsService;
 
     public HttpHeaders login(String email, String password) {
         try{
@@ -25,6 +26,8 @@ public class AuthService {
             String accessToken = jwtTokenProvider.createToken(authentication);
             String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
+            userDetailsService.processSuccessfulLogin(email);
+
             //헤더 설정
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
@@ -32,9 +35,14 @@ public class AuthService {
 
             return headers;
         }catch (AuthenticationException e){
-            //인증 실패 시 예외 처리
-            throw new AuthenticationException("Authentication failed: "+e.getMessage()){};
-
+//            //인증 실패 시 예외 처리
+//            throw new AuthenticationException("Authentication failed: "+e.getMessage()){};
+//
+            //로그인 실패 처리
+            userDetailsService.handleAccountStatus(email);
+            userDetailsService.processFailedLogin(email);
+            // 예외를 던짐
+            throw e;
         }
     }
 
@@ -42,5 +50,9 @@ public class AuthService {
     // 로그아웃
     public boolean logout(String token) {
         return jwtTokenProvider.blacklistRefreshToken(token);
+    }
+
+    public int getRemainingLoginAttempts(String email) {
+        return userDetailsService.getRemainingLoginAttempts(email);
     }
 }

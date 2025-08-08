@@ -1,9 +1,8 @@
 package org.project.securelogin.config;
 
 import lombok.RequiredArgsConstructor;
-import org.project.jwt.JwtAuthenticationFilter;
-import org.project.jwt.JwtTokenProvider;
-import org.project.securelogin.domain.CustomUserDetails;
+import org.project.securelogin.jwt.JwtAuthenticationFilter;
+import org.project.securelogin.jwt.JwtTokenProvider;
 import org.project.securelogin.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,7 +47,15 @@ public class SecurityConfig {
                     .requestMatchers("/login","/auth/login", "/user/signup","/").permitAll()
                     .anyRequest().authenticated() // 그 외 요청은 인증 필요
             )
+                //폼 로그인 설정
                 .formLogin(form->form.permitAll())
+
+                //OAuth 로그인 설정
+                .oauth2Login(oauth2->oauth2.loginPage("/login")
+                        .failureHandler(oauth2LoginFailureHandler)
+                        .successHandler(oauth2LoginFailureHandler)
+                        .userInfoEndpoint(userInfo->userInfo.userService(customOAuth2UserService)))
+
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider,
                         customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
 
